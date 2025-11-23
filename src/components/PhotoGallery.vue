@@ -1,32 +1,23 @@
 <template>
   <div class="world-cup">
-    <div v-if="!winner">
-      <h2>{{ roundTitle }}</h2>
-      <div class="match-up">
-        <div class="candidate" @click="selectCandidate(currentMatch[0])">
-          <img :src="currentMatch[0].src" :alt="currentMatch[0].alt">
-          <h3>{{ currentMatch[0].alt }}</h3>
-        </div>
-        <div class="vs">VS</div>
-        <div class="candidate" @click="selectCandidate(currentMatch[1])">
-          <img :src="currentMatch[1].src" :alt="currentMatch[1].alt">
-          <h3>{{ currentMatch[1].alt }}</h3>
-        </div>
+    <h2>{{ roundTitle }}</h2>
+    <div class="match-up">
+      <div class="candidate" @click="selectCandidate(currentMatch[0])">
+        <img :src="currentMatch[0].src" :alt="currentMatch[0].alt">
+        <h3>{{ currentMatch[0].alt }}</h3>
       </div>
-    </div>
-    <div v-else class="winner-container">
-      <h2>최종 우승!</h2>
-      <div class="winner">
-        <img :src="winner.src" :alt="winner.alt">
-        <h3>{{ winner.alt }}</h3>
+      <div class="vs">VS</div>
+      <div class="candidate" @click="selectCandidate(currentMatch[1])">
+        <img :src="currentMatch[1].src" :alt="currentMatch[1].alt">
+        <h3>{{ currentMatch[1].alt }}</h3>
       </div>
-      <button @click="restart">다시 시작</button>
     </div>
   </div>
 </template>
 
 <script>
 export default {
+  emits: ['winner-selected'], // 부모에게 보낼 이벤트를 정의합니다.
   data() {
     return {
       candidates: [
@@ -37,7 +28,6 @@ export default {
       ],
       round: 0,
       nextRoundCandidates: [],
-      winner: null,
     };
   },
   computed: {
@@ -46,12 +36,8 @@ export default {
       return this.candidates.slice(startIndex, startIndex + 2);
     },
     roundTitle() {
-      if (this.candidates.length === 4) {
-        return '4강';
-      }
-      if (this.candidates.length === 2) {
-        return '결승';
-      }
+      if (this.candidates.length === 4) return '4강';
+      if (this.candidates.length === 2) return '결승';
       return '';
     }
   },
@@ -60,35 +46,24 @@ export default {
       this.nextRoundCandidates.push(selected);
       
       if (this.nextRoundCandidates.length * 2 === this.candidates.length) {
-        // 현재 라운드 종료
+        // 현재 라운드의 모든 경기가 끝났을 때
         if (this.candidates.length === 2) {
-          // 결승전 종료, 우승자 결정
-          this.winner = this.nextRoundCandidates[0];
+          // 결승전이 끝났으면, 우승자를 부모에게 알립니다.
+          this.$emit('winner-selected', this.nextRoundCandidates[0]);
         } else {
-          // 다음 라운드로 진출
+          // 다음 라운드로 진출합니다.
           this.candidates = this.nextRoundCandidates;
           this.nextRoundCandidates = [];
           this.round = 0;
         }
       } else {
-        // 다음 매치로 이동
+        // 현재 라운드의 다음 경기로 이동합니다.
         this.round++;
       }
-    },
-    restart() {
-      this.candidates = [
-        { src: '/images/suzi.jpeg', alt: '수지' },
-        { src: '/images/leeze.jpeg', alt: '리즈' },
-        { src: '/images/minji.jpeg', alt: '민지' },
-        { src: '/images/karina.jpeg', alt: '카리나' },
-      ].sort(() => Math.random() - 0.5); // 순서 섞기
-      this.round = 0;
-      this.nextRoundCandidates = [];
-      this.winner = null;
     }
   },
   created() {
-    // 컴포넌트 생성 시 후보 목록 순서 섞기
+    // 컴포넌트가 생성될 때 후보 목록을 무작위로 섞습니다.
     this.candidates.sort(() => Math.random() - 0.5);
   }
 };
@@ -110,7 +85,7 @@ h2 {
 .match-up {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: center; /* 이미지가 다른 높이를 가질 수 있으므로 상단 정렬 */
   gap: 20px;
 }
 
@@ -126,8 +101,9 @@ h2 {
 
 .candidate img {
   width: 100%;
-  height: 400px; /* 이미지 높이 수정 */
-  object-fit: cover; /* 비율 유지하며 채우기 */
+  /* height와 object-fit 속성 제거하여 원본 비율 유지 */
+  height: auto;
+  display: block; /* 이미지 하단 여백 제거 */
   border-radius: 8px;
   border: 3px solid transparent;
 }
@@ -142,25 +118,19 @@ h2 {
   color: #dc3545;
 }
 
-.winner-container {
-  text-align: center;
-}
-
-.winner img {
-  width: 70%;
-  max-width: 400px;
-  border-radius: 10px;
-  border: 5px solid #28a745;
-}
-
-button {
-  margin-top: 20px;
-  padding: 10px 20px;
-  font-size: 1rem;
-  cursor: pointer;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
+/* 모바일 화면을 위한 미디어 쿼리 */
+@media (max-width: 768px) {
+  .world-cup {
+    padding: 10px;
+  }
+  .match-up {
+    gap: 10px;
+  }
+  .vs {
+    font-size: 1.5rem;
+  }
+  h3 {
+    font-size: 1rem;
+  }
 }
 </style>
